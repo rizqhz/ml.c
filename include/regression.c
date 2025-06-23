@@ -1,75 +1,80 @@
 #include "regression.h"
+#include "activation.h"
+#include "loss.h"
 
-data_t *data_init(size_t size, float_t *value)
+float_t *linear_foward(float_t *x, sets_t *sets)
 {
-    data_t *data = malloc(sizeof(data_t));
-    data->value = value;
-    data->size = size;
-    return data;
-}
-
-float_t *foward(data_t *x, params_t *params)
-{
-    const size_t n = x->size;
-    float *result = calloc(sizeof(float), n);
-
-    for (size_t i = 0; i < n; i++) {
-        result[i] = x->value[i] * params->weight + params->bias;
+    float_t *result = calloc(sizeof(float_t), sets->size);
+    for (size_t i = 0; i < sets->size; i++) {
+        result[i] = linear_combination(x[i], sets->params.coeff, sets->params.intercept);
     }
-
     return result;
 }
 
-void backward(data_t *x, float_t *y, float_t *y_pred, params_t *params)
+void linear_backward(float_t *x, float_t *y, float_t *y_pred, sets_t *sets)
 {
-    const size_t n = x->size;
-    float grad_weight = 0, grad_bias = 0, diff;
+    const float_t lr = sets->opts.learning_rate;
+    const float_t v = sets->opts.momentum;
+    float_t grad_coeff = 0, grad_intercept = 0, diff = 0;
 
-    for (size_t i = 0; i < n; i++) {
+    for (size_t i = 0; i < sets->size; i++) {
         diff = y_pred[i] - y[i];
-        grad_weight += diff * x->value[i];
-        grad_bias += diff;
+        grad_coeff += diff * x[i];
+        grad_intercept += diff;
     }
 
-    grad_weight /= n;
-    grad_bias /= n;
+    grad_coeff /= sets->size;
+    grad_intercept /= sets->size;
 
-    params->momentum_weight = LEARNING_RATE * grad_weight + MOMENTUM * params->momentum_weight;
-    params->momentum_bias = LEARNING_RATE * grad_bias + MOMENTUM * params->momentum_bias;
+    params_t *params = &sets->params;
+    params_t *momentum = sets->params.momentum;
 
-    params->weight -= params->momentum_weight;
-    params->bias -= params->momentum_bias;
+    momentum->coeff = grad_coeff * lr + momentum->coeff * v;
+    momentum->intercept = grad_intercept * lr + momentum->intercept * v;
+    params->coeff -= momentum->coeff;
+    params->intercept -= momentum->intercept;
 }
 
-result_t linear(data_t *x, float_t *y, params_t *params)
+params_t linear(float_t *x, float_t *y, size_t len, opts_t opts)
 {
-    const size_t n = x->size;
-    float_t *y_pred = NULL, err;
+    sets_t sets = {
+        .params = (params_t) {
+            .coeff = 0.5f, .intercept = 0.5f,
+            .momentum = NULL,
+        },
+        .opts = opts,
+        .size = len,
+    };
 
-    for (int epoch = 1; epoch <= EPOCHS; epoch++) {
+    sets.params.momentum = malloc(sizeof(params_t));
+    sets.params.momentum->coeff = 0;
+    sets.params.momentum->intercept = 0;
+
+    for (int epoch = 1; epoch <= sets.opts.epochs; epoch++) {
         printf("\e[Hepoch: %d\n\n", epoch);
-        printf("y = %.2fx + %.2f\n", params->weight, params->bias);
+        printf("y = %.2fx + %.2f\n", sets.params.coeff, sets.params.intercept);
 
-        y_pred = foward(x, params);
-        printf("loss: %.4f\n\n", mean_square_error(y, y_pred, n));
+        float *y_pred = linear_foward(x, &sets);
+        printf("loss: %.4f\n\n", mean_square_error(y, y_pred, sets.size));
 
-        backward(x, y, y_pred, params);
+        linear_backward(x, y, y_pred, &sets);
+        free(y_pred);
     }
 
-    free(y_pred);
+    free(sets.params.momentum);
 
-    return (result_t) {
-        .weight = params->weight,
-        .bias = params->bias,
+    return (params_t) {
+        .coeff = sets.params.coeff,
+        .intercept = sets.params.intercept,
     };
 }
 
-result_t logistic(data_t *x, float_t *y, params_t *params)
+params_t logistic(float_t *x, float_t *y, size_t len, opts_t opts)
 {
     // TODO: logistic regression
 
-    return (result_t) {
-        .weight = 0,
-        .bias = 0,
+    return (params_t) {
+        .coeff = 0,
+        .intercept = 0,
     };
 }

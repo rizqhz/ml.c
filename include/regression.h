@@ -3,36 +3,35 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <math.h>
 
-#include "loss.h"
+struct opts_t {
+    float_t learning_rate, momentum;
+    size_t epochs;
+};
 
-#define LEARNING_RATE 0.01f
-#define MOMENTUM 0.9f
-#define EPOCHS 2000
+typedef struct opts_t opts_t;
 
-typedef struct {
-    float_t *value;
+struct params_t {
+    float_t intercept;
+    float_t coeff;
+    struct params_t *momentum;
+};
+
+typedef struct params_t params_t;
+
+struct sets_t {
+    struct params_t params;
+    struct opts_t opts;
     size_t size;
-} data_t;
+};
 
-data_t *data_init(size_t size, float_t *value);
+typedef struct sets_t sets_t;
 
-typedef struct {
-    float_t weight, bias;
-    float_t momentum_weight, momentum_bias;
-} params_t;
+float_t *linear_foward(float_t *x, sets_t *sets);
+void linear_backward(float_t *x, float_t *y, float_t *y_pred, sets_t *sets);
 
-float_t *foward(data_t *x, params_t *params);
-void backward(data_t *x, float_t *y, float_t *y_pred, params_t *params);
-
-typedef struct {
-    float_t weight;
-    float_t bias;
-} result_t;
-
-result_t linear(data_t *x, float_t *y, params_t *params);
-result_t logistic(data_t *x, float_t *y, params_t *params);
+params_t linear(float_t *x, float_t *y, size_t len, opts_t opts);
+params_t logistic(float_t *x, float_t *y, size_t len, opts_t opts);
 
 #endif
