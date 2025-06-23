@@ -2,8 +2,6 @@
 #include <time.h>
 
 #include "include/regression.h"
-#include "include/activation.h"
-#include "include/loss.h"
 
 int main(int argc, char **argv)
 {
