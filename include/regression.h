@@ -30,8 +30,10 @@ typedef struct sets_t sets_t;
 
 float_t *linear_foward(float_t *x, sets_t *sets);
 void linear_backward(float_t *x, float_t *y, float_t *y_pred, sets_t *sets);
-
 params_t linear(float_t *x, float_t *y, size_t len, opts_t opts);
+
+float_t *logistic_foward(float_t *x, sets_t *sets);
+void logistic_backward(float_t *x, float_t *y, float_t *y_pred, sets_t *sets);
 params_t logistic(float_t *x, float_t *y, size_t len, opts_t opts);
 
 #endif

@@ -12,5 +12,5 @@ float_t relu(float_t x)
 
 float_t sigmoid(float_t x)
 {
-    return 1.0 / (1.0 - expf(-x));
+    return 1.0 / (1.0 + expf(-x));
 }
